@@ -42,7 +42,7 @@ A super light-weight, effective embedded MCP **(AST-based)** that understand and
 </div>
 
 
-## Get Started - zero config, let's go!!
+## Get Started
 
 Using [pipx](https://pipx.pypa.io/stable/installation/):
 ```bash
@@ -57,12 +57,16 @@ uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex
 
 ### Claude
 ```bash
-claude mcp add cocoindex-code -- cocoindex-code
+claude mcp add cocoindex-code \
+  -e OPENAI_API_KEY=your-api-key \
+  -- cocoindex-code
 ```
 
 ### Codex
 ```bash
-codex mcp add cocoindex-code -- cocoindex-code
+codex mcp add cocoindex-code \
+  -e OPENAI_API_KEY=your-api-key \
+  -- cocoindex-code
 ```
 
 ### OpenCode
@@ -119,7 +123,7 @@ Use the cocoindex-code MCP server for semantic code search when:
 - **Ultra Performant to code changes**:⚡ Built on top of ultra performant [Rust indexing engine](https://github.com/cocoindex-io/cocoindex/edit/main/README.md). Only re-indexes changed files for fast updates.
 - **Multi-Language Support**: Python, JavaScript/TypeScript, Rust, Go, Java, C/C++, C#, SQL, Shell
 - **Embedded**: Portable and just works, no database setup required!
-- **Flexible Embeddings**: By default, no API key required with Local SentenceTransformers - totally free!  You can customize 100+ cloud providers.
+- **Flexible Embeddings**: API-only via LiteLLM-compatible providers, without bundling local model runtimes into the install.
 
 
 ## Configuration
@@ -127,8 +131,7 @@ Use the cocoindex-code MCP server for semantic code search when:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `COCOINDEX_CODE_ROOT_PATH` | Root path of the codebase | Auto-discovered (see below) |
-| `COCOINDEX_CODE_EMBEDDING_MODEL` | Embedding model (see below) | `sbert/sentence-transformers/all-MiniLM-L6-v2` |
-| `COCOINDEX_CODE_BATCH_SIZE` | Max batch size for local embedding model | `16` |
+| `COCOINDEX_CODE_EMBEDDING_MODEL` | LiteLLM-compatible remote embedding model (see below) | `text-embedding-3-small` |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Additional file extensions to index (comma-separated, e.g. `"inc:php,yaml,toml"` — use `ext:lang` to override language detection) | _(none)_ |
 
 
@@ -141,32 +144,30 @@ If `COCOINDEX_CODE_ROOT_PATH` is not set, the codebase root is discovered by:
 3. Falling back to the current working directory
 
 ### Embedding model
-By default - this project use a local SentenceTransformers model (`sentence-transformers/all-MiniLM-L6-v2`). No API key required and completely free!
+This package now runs in API-only mode. By default it uses OpenAI's `text-embedding-3-small`, so you need to provide `OPENAI_API_KEY` unless you override the model to another LiteLLM-compatible provider.
 
-Use a code specific embedding model can achieve better semantic understanding for your results, this project supports all models on Ollama and 100+ cloud providers.
+For code search, a code-specific remote embedding model can achieve better semantic understanding. This project supports LiteLLM-compatible providers and models.
 
 Set `COCOINDEX_CODE_EMBEDDING_MODEL` to any [LiteLLM-supported model](https://docs.litellm.ai/docs/embedding/supported_embedding), along with the provider's API key:
 
 <details>
-<summary>Ollama (Local)</summary>
+<summary>OpenAI (Default)</summary>
 
 ```bash
 claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=ollama/nomic-embed-text \
+  -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
-
-Set `OLLAMA_API_BASE` if your Ollama server is not at `http://localhost:11434`.
 
 </details>
 
 <details>
-<summary>OpenAI</summary>
+<summary>Voyage (Code-Optimized)</summary>
 
 ```bash
 claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=text-embedding-3-small \
-  -e OPENAI_API_KEY=your-api-key \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=voyage/voyage-code-3 \
+  -e VOYAGE_API_KEY=your-api-key \
   -- cocoindex-code
 ```
 
@@ -211,14 +212,15 @@ claude mcp add cocoindex-code \
 </details>
 
 <details>
-<summary>Voyage (Code-Optimized)</summary>
+<summary>Ollama-Compatible API Endpoint</summary>
 
 ```bash
 claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=voyage/voyage-code-3 \
-  -e VOYAGE_API_KEY=your-api-key \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=ollama/nomic-embed-text \
   -- cocoindex-code
 ```
+
+Set `OLLAMA_API_BASE` if your Ollama-compatible embedding endpoint is not at `http://localhost:11434`.
 
 </details>
 
@@ -262,16 +264,7 @@ claude mcp add cocoindex-code \
 
 Any model supported by LiteLLM works — see the [full list of embedding providers](https://docs.litellm.ai/docs/embedding/supported_embedding).
 
-### GPU-optimised local model
-
-If you have a GPU, [`nomic-ai/CodeRankEmbed`](https://huggingface.co/nomic-ai/CodeRankEmbed) delivers significantly better code retrieval than the default model. It is 137M parameters, requires ~1 GB VRAM, and has an 8192-token context window.
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=sbert/nomic-ai/CodeRankEmbed \
-  -e COCOINDEX_CODE_BATCH_SIZE=16 \
-  -- cocoindex-code
-```
+Legacy `sbert/...` local models are no longer supported in this package variant.
 
 **Note:** Switching models requires re-indexing your codebase (the vector dimensions differ).
 

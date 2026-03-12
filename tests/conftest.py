@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 import cocoindex as coco
+import numpy as np
 import pytest
 import pytest_asyncio
 
@@ -13,6 +14,7 @@ import pytest_asyncio
 # Create test directory and set it BEFORE any module imports
 _TEST_DIR = Path(tempfile.mkdtemp(prefix="cocoindex_test_"))
 os.environ["COCOINDEX_CODE_ROOT_PATH"] = str(_TEST_DIR)
+os.environ["COCOINDEX_CODE_EMBEDDING_MODEL"] = "text-embedding-3-small"
 
 
 @pytest.fixture(scope="session")
@@ -31,3 +33,47 @@ async def coco_runtime() -> AsyncIterator[None]:
     """
     async with coco.runtime():
         yield
+
+
+@pytest.fixture(autouse=True)
+def mock_remote_embeddings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Replace network embeddings with a deterministic local test double."""
+    from cocoindex_code.shared import embedder
+
+    vocabulary = [
+        "fibonacci",
+        "database",
+        "connect",
+        "query",
+        "neural",
+        "machine",
+        "learning",
+        "authentication",
+        "login",
+        "python",
+        "javascript",
+        "typescript",
+        "function",
+        "server",
+        "hello",
+    ]
+
+    async def fake_embed(
+        text: str,
+        is_query: bool = False,
+        prompt_name: str | None = None,
+    ) -> np.ndarray:
+        del is_query, prompt_name
+        lowered = text.lower()
+        vector = np.array(
+            [float(lowered.count(token)) for token in vocabulary],
+            dtype="float32",
+        )
+        if not vector.any():
+            vector[0] = 1.0
+        norm = np.linalg.norm(vector)
+        if norm:
+            vector = vector / norm
+        return vector
+
+    monkeypatch.setattr(embedder, "embed", fake_embed)

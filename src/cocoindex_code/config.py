@@ -6,7 +6,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-_DEFAULT_MODEL = "sbert/sentence-transformers/all-MiniLM-L6-v2"
+_DEFAULT_MODEL = "text-embedding-3-small"
+_LEGACY_LOCAL_MODEL_PREFIX = "sbert/"
 
 
 def _find_root_with_marker(start: Path, markers: list[str]) -> Path | None:
@@ -42,6 +43,20 @@ def _discover_codebase_root() -> Path:
     return root if root is not None else cwd
 
 
+def _load_embedding_model() -> str:
+    """Load and validate the configured embedding model."""
+    model = os.environ.get("COCOINDEX_CODE_EMBEDDING_MODEL", _DEFAULT_MODEL).strip()
+    if not model:
+        raise ValueError("COCOINDEX_CODE_EMBEDDING_MODEL cannot be empty.")
+    if model.startswith(_LEGACY_LOCAL_MODEL_PREFIX):
+        raise ValueError(
+            "Local SentenceTransformers models are no longer supported. "
+            "Set COCOINDEX_CODE_EMBEDDING_MODEL to a LiteLLM-compatible remote model, "
+            "for example `text-embedding-3-small`."
+        )
+    return model
+
+
 @dataclass
 class Config:
     """Configuration loaded from environment variables."""
@@ -49,44 +64,19 @@ class Config:
     codebase_root_path: Path
     embedding_model: str
     index_dir: Path
-    device: str | None
-    trust_remote_code: bool
     extra_extensions: dict[str, str | None]
 
     @classmethod
     def from_env(cls) -> Config:
         """Load configuration from environment variables."""
-        # Get root path from env or discover it
         root_path_str = os.environ.get("COCOINDEX_CODE_ROOT_PATH")
         if root_path_str:
             root = Path(root_path_str).resolve()
         else:
             root = _discover_codebase_root()
 
-        # Get embedding model
-        # Prefix "sbert/" for SentenceTransformers models, otherwise LiteLLM.
-        embedding_model = os.environ.get(
-            "COCOINDEX_CODE_EMBEDDING_MODEL",
-            _DEFAULT_MODEL,
-        )
-
-        # Index directory is always under the root
         index_dir = root / ".cocoindex_code"
 
-        # Device: auto-detect CUDA or use env override
-        device = os.environ.get("COCOINDEX_CODE_DEVICE")
-
-        # trust_remote_code: opt-in via env var only.
-        # sentence-transformers 5.x+ supports Jina models natively, so
-        # auto-enabling this for jinaai/ models causes failures with
-        # transformers 5.x (removed find_pruneable_heads_and_indices).
-        trust_remote_code = os.environ.get("COCOINDEX_CODE_TRUST_REMOTE_CODE", "").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
-
-        # Extra file extensions (format: "inc:php,yaml,toml" — optional lang after colon)
         raw_extra = os.environ.get("COCOINDEX_CODE_EXTRA_EXTENSIONS", "")
         extra_extensions: dict[str, str | None] = {}
         for token in raw_extra.split(","):
@@ -101,10 +91,8 @@ class Config:
 
         return cls(
             codebase_root_path=root,
-            embedding_model=embedding_model,
+            embedding_model=_load_embedding_model(),
             index_dir=index_dir,
-            device=device,
-            trust_remote_code=trust_remote_code,
             extra_extensions=extra_extensions,
         )
 
