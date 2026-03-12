@@ -7,7 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 _DEFAULT_MODEL = "text-embedding-3-small"
+_DEFAULT_ENCODING_FORMAT = "float"
 _LEGACY_LOCAL_MODEL_PREFIX = "sbert/"
+_VALID_ENCODING_FORMATS = {"float", "base64", "bytes", "bytes_only"}
 
 
 def _find_root_with_marker(start: Path, markers: list[str]) -> Path | None:
@@ -57,6 +59,20 @@ def _load_embedding_model() -> str:
     return model
 
 
+def _load_encoding_format() -> str:
+    """Load and validate the embedding encoding format."""
+    value = os.environ.get("COCOINDEX_CODE_ENCODING_FORMAT", _DEFAULT_ENCODING_FORMAT).strip()
+    if not value:
+        return _DEFAULT_ENCODING_FORMAT
+    if value not in _VALID_ENCODING_FORMATS:
+        valid = ", ".join(sorted(_VALID_ENCODING_FORMATS))
+        raise ValueError(
+            "COCOINDEX_CODE_ENCODING_FORMAT must be one of "
+            f"{valid}. Got: {value!r}."
+        )
+    return value
+
+
 @dataclass
 class Config:
     """Configuration loaded from environment variables."""
@@ -64,6 +80,7 @@ class Config:
     codebase_root_path: Path
     embedding_model: str
     api_base: str | None
+    encoding_format: str
     index_dir: Path
     include_patterns: list[str] | None
     extra_extensions: dict[str, str | None]
@@ -78,6 +95,7 @@ class Config:
             root = _discover_codebase_root()
 
         api_base = os.environ.get("COCOINDEX_CODE_API_BASE", "").strip() or None
+        encoding_format = _load_encoding_format()
         index_dir = root / ".cocoindex_code"
 
         raw_include_patterns = os.environ.get("COCOINDEX_CODE_INCLUDE_PATTERNS", "")
@@ -103,6 +121,7 @@ class Config:
             codebase_root_path=root,
             embedding_model=_load_embedding_model(),
             api_base=api_base,
+            encoding_format=encoding_format,
             index_dir=index_dir,
             include_patterns=include_patterns or None,
             extra_extensions=extra_extensions,

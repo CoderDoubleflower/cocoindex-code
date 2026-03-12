@@ -93,6 +93,46 @@ class TestApiBase:
             assert config.api_base == "https://example.com/v1"
 
 
+class TestEncodingFormat:
+    """Tests for COCOINDEX_CODE_ENCODING_FORMAT env var."""
+
+    def test_defaults_to_float(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {"COCOINDEX_CODE_ROOT_PATH": str(tmp_path)},
+            clear=False,
+        ):
+            os.environ.pop("COCOINDEX_CODE_ENCODING_FORMAT", None)
+            config = Config.from_env()
+            assert config.encoding_format == "float"
+
+    def test_reads_valid_encoding_format(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_ENCODING_FORMAT": "base64",
+            },
+        ):
+            config = Config.from_env()
+            assert config.encoding_format == "base64"
+
+    def test_rejects_invalid_encoding_format(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_ENCODING_FORMAT": "json",
+            },
+        ):
+            try:
+                Config.from_env()
+            except ValueError as exc:
+                assert "COCOINDEX_CODE_ENCODING_FORMAT must be one of" in str(exc)
+            else:
+                raise AssertionError("Expected invalid encoding format to be rejected")
+
+
 class TestExtraExtensions:
     """Tests for COCOINDEX_CODE_EXTRA_EXTENSIONS env var."""
 

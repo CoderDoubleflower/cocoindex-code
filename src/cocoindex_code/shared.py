@@ -20,13 +20,15 @@ logger = logging.getLogger(__name__)
 _embedder_kwargs: dict[str, str] = {}
 if config.api_base is not None:
     _embedder_kwargs["api_base"] = config.api_base
+_embedder_kwargs["encoding_format"] = config.encoding_format
 
 embedder: LiteLLMEmbedder = LiteLLMEmbedder(config.embedding_model, **_embedder_kwargs)
 query_prompt_name: str | None = None
 logger.info(
-    "Embedding model (remote API via LiteLLM): %s | api_base: %s",
+    "Embedding model (remote API via LiteLLM): %s | api_base: %s | encoding_format: %s",
     config.embedding_model,
     config.api_base,
+    config.encoding_format,
 )
 
 # Context key for SQLite database (connection managed in lifespan)
