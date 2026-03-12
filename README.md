@@ -65,18 +65,20 @@ Install this fork directly from GitHub:
 
 Using `pipx`:
 ```bash
-pipx install --force "git+ssh://git@github.com/CoderDoubleflower/cocoindex-code.git@main"
+pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
 Using `uv`:
 ```bash
-uv tool install --force "git+ssh://git@github.com/CoderDoubleflower/cocoindex-code.git@main"
+uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
 To pin to a specific revision instead of `main`:
 ```bash
-pipx install --force "git+ssh://git@github.com/CoderDoubleflower/cocoindex-code.git@18e42e0"
+pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@18e42e0"
 ```
+
+Use `git+ssh` only if the installer has GitHub SSH access configured for this repository.
 
 Or install directly from a local checkout:
 ```bash
