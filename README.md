@@ -29,15 +29,7 @@ A super light-weight, effective embedded MCP **(AST-based)** that understand and
 
 🌟 Please help star [CocoIndex](https://github.com/cocoindex-io/cocoindex) if you like this project!
 
-[Deutsch](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=de) |
-[English](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=en) |
-[Español](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=es) |
-[français](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=fr) |
-[日本語](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ja) |
-[한국어](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ko) |
-[Português](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=pt) |
-[Русский](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ru) |
-[中文](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=zh)
+[English](README.md) | [中文](README.zh-CN.md)
 
 </div>
 
@@ -78,7 +70,7 @@ Index only C/C++ files with a remote embedding model:
 COCOINDEX_CODE_ROOT_PATH="$(pwd)" \
 COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h,**/*.c" \
 COCOINDEX_CODE_EMBEDDING_MODEL="openai/Qwen3-VL-Embedding-8B" \
-COCOINDEX_CODE_API_BASE="https://code-api.x-aio.com/v1" \
+COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
 COCOINDEX_CODE_ENCODING_FORMAT="float" \
 OPENAI_API_KEY="your-api-key" \
 cocoindex-code index
