@@ -71,7 +71,6 @@ COCOINDEX_CODE_ROOT_PATH="$(pwd)" \
 COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h,**/*.c" \
 COCOINDEX_CODE_EMBEDDING_MODEL="openai/Qwen3-VL-Embedding-8B" \
 COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
-COCOINDEX_CODE_ENCODING_FORMAT="float" \
 OPENAI_API_KEY="your-api-key" \
 cocoindex-code index
 ```
@@ -84,7 +83,6 @@ claude mcp add cocoindex-code \
   --transport stdio \
   -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
   -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
-  -e COCOINDEX_CODE_ENCODING_FORMAT=float \
   -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
@@ -95,7 +93,6 @@ Add the MCP server to Codex:
 codex mcp add cocoindex-code \
   -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
   -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
-  -e COCOINDEX_CODE_ENCODING_FORMAT=float \
   -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
