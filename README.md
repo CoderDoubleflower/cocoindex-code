@@ -176,6 +176,7 @@ Use the cocoindex-code MCP server for semantic code search when:
 |----------|-------------|---------|
 | `COCOINDEX_CODE_ROOT_PATH` | Root path of the codebase | Auto-discovered (see below) |
 | `COCOINDEX_CODE_EMBEDDING_MODEL` | LiteLLM-compatible remote embedding model (see below) | `text-embedding-3-small` |
+| `COCOINDEX_CODE_API_BASE` | Optional custom API base URL passed to LiteLLM as `api_base` | Provider default |
 | `COCOINDEX_CODE_INCLUDE_PATTERNS` | Comma-separated glob patterns to index. When set, overrides the built-in default file types. | Built-in language list |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Additional file extensions to index (comma-separated, e.g. `"inc:php,yaml,toml"` — use `ext:lang` to override language detection) | _(none)_ |
 
@@ -344,6 +345,36 @@ Any model supported by LiteLLM works — see the [full list of embedding provide
 Legacy `sbert/...` local models are no longer supported in this package variant.
 
 **Note:** Switching models requires re-indexing your codebase (the vector dimensions differ).
+
+### External API Base URL
+
+Set `COCOINDEX_CODE_API_BASE` when your embedding provider uses a non-default endpoint and LiteLLM expects an `api_base`.
+
+Example using a custom OpenAI-compatible endpoint:
+
+```bash
+COCOINDEX_CODE_EMBEDDING_MODEL="text-embedding-3-small" \
+COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
+OPENAI_API_KEY="your-api-key" \
+cocoindex-code index
+```
+
+Example using a custom OpenRouter-compatible endpoint:
+
+```bash
+COCOINDEX_CODE_EMBEDDING_MODEL="openrouter/qwen/qwen3-embedding-8b" \
+COCOINDEX_CODE_API_BASE="https://your-openrouter-compatible-endpoint/api/v1" \
+OPENROUTER_API_KEY="your-api-key" \
+cocoindex-code index
+```
+
+If your provider already has a dedicated LiteLLM environment variable, that still works too. Common examples:
+
+- Azure OpenAI: `AZURE_API_BASE`
+- Ollama / Ollama-compatible servers: `OLLAMA_API_BASE`
+- NVIDIA NIM: `NVIDIA_NIM_API_BASE`
+
+If you use standard OpenRouter, you usually do not need to set `COCOINDEX_CODE_API_BASE`.
 
 ### Restrict Indexed File Types
 

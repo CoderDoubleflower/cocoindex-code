@@ -63,6 +63,7 @@ class Config:
 
     codebase_root_path: Path
     embedding_model: str
+    api_base: str | None
     index_dir: Path
     include_patterns: list[str] | None
     extra_extensions: dict[str, str | None]
@@ -76,6 +77,7 @@ class Config:
         else:
             root = _discover_codebase_root()
 
+        api_base = os.environ.get("COCOINDEX_CODE_API_BASE", "").strip() or None
         index_dir = root / ".cocoindex_code"
 
         raw_include_patterns = os.environ.get("COCOINDEX_CODE_INCLUDE_PATTERNS", "")
@@ -100,6 +102,7 @@ class Config:
         return cls(
             codebase_root_path=root,
             embedding_model=_load_embedding_model(),
+            api_base=api_base,
             index_dir=index_dir,
             include_patterns=include_patterns or None,
             extra_extensions=extra_extensions,

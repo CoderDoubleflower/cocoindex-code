@@ -17,9 +17,17 @@ from .config import config
 
 logger = logging.getLogger(__name__)
 
-embedder: LiteLLMEmbedder = LiteLLMEmbedder(config.embedding_model)
+_embedder_kwargs: dict[str, str] = {}
+if config.api_base is not None:
+    _embedder_kwargs["api_base"] = config.api_base
+
+embedder: LiteLLMEmbedder = LiteLLMEmbedder(config.embedding_model, **_embedder_kwargs)
 query_prompt_name: str | None = None
-logger.info("Embedding model (remote API via LiteLLM): %s", config.embedding_model)
+logger.info(
+    "Embedding model (remote API via LiteLLM): %s | api_base: %s",
+    config.embedding_model,
+    config.api_base,
+)
 
 # Context key for SQLite database (connection managed in lifespan)
 SQLITE_DB = coco.ContextKey[sqlite.SqliteDatabase]("sqlite_db")

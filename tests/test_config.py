@@ -57,6 +57,42 @@ class TestEmbeddingModel:
                 raise AssertionError("Expected empty embedding model to be rejected")
 
 
+class TestApiBase:
+    """Tests for COCOINDEX_CODE_API_BASE env var."""
+
+    def test_empty_by_default(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {"COCOINDEX_CODE_ROOT_PATH": str(tmp_path)},
+            clear=False,
+        ):
+            os.environ.pop("COCOINDEX_CODE_API_BASE", None)
+            config = Config.from_env()
+            assert config.api_base is None
+
+    def test_reads_api_base(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_API_BASE": "https://openrouter.ai/api/v1",
+            },
+        ):
+            config = Config.from_env()
+            assert config.api_base == "https://openrouter.ai/api/v1"
+
+    def test_trims_whitespace(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_API_BASE": "  https://example.com/v1  ",
+            },
+        ):
+            config = Config.from_env()
+            assert config.api_base == "https://example.com/v1"
+
+
 class TestExtraExtensions:
     """Tests for COCOINDEX_CODE_EXTRA_EXTENSIONS env var."""
 
