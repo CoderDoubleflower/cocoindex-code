@@ -73,6 +73,18 @@ Using `uv`:
 uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
+If you already installed this fork and want to update to the latest `main`:
+
+Using `pipx`:
+```bash
+pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
+```
+
+Using `uv`:
+```bash
+uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
+```
+
 To pin to a specific revision instead of `main`:
 ```bash
 pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@18e42e0"
