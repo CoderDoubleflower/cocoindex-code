@@ -63,6 +63,8 @@ uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex
 
 Install this fork directly from GitHub:
 
+This fork also installs a patched `litellm` dependency from `CoderDoubleflower/litellm` to suppress noisy provider diagnostic output during indexing failures.
+
 Using `pipx`:
 ```bash
 pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
@@ -385,6 +387,8 @@ PY
 ```
 
 After editing the installed package, remember that a future `uv tool install --force ...` reinstall can overwrite your local patch.
+
+This fork already depends on a patched `litellm` fork, so reinstalling `cocoindex-code` from this repository will restore that patched dependency automatically.
 
 ## MCP Tools
 
