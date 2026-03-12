@@ -162,6 +162,7 @@ Use the cocoindex-code MCP server for semantic code search when:
 |----------|-------------|---------|
 | `COCOINDEX_CODE_ROOT_PATH` | Root path of the codebase | Auto-discovered (see below) |
 | `COCOINDEX_CODE_EMBEDDING_MODEL` | LiteLLM-compatible remote embedding model (see below) | `text-embedding-3-small` |
+| `COCOINDEX_CODE_INCLUDE_PATTERNS` | Comma-separated glob patterns to index. When set, overrides the built-in default file types. | Built-in language list |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Additional file extensions to index (comma-separated, e.g. `"inc:php,yaml,toml"` — use `ext:lang` to override language detection) | _(none)_ |
 
 
@@ -297,6 +298,20 @@ Any model supported by LiteLLM works — see the [full list of embedding provide
 Legacy `sbert/...` local models are no longer supported in this package variant.
 
 **Note:** Switching models requires re-indexing your codebase (the vector dimensions differ).
+
+### Restrict Indexed File Types
+
+Use `COCOINDEX_CODE_INCLUDE_PATTERNS` to override the default built-in file type list.
+
+For example, to index only C/C++ source and header files:
+
+```bash
+COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h" cocoindex-code index
+```
+
+When `COCOINDEX_CODE_INCLUDE_PATTERNS` is set, it replaces the default include list entirely.
+
+`COCOINDEX_CODE_EXTRA_EXTENSIONS` is still useful when you want to keep the default file types and only add a few more.
 
 ## MCP Tools
 

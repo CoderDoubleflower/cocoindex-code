@@ -64,6 +64,7 @@ class Config:
     codebase_root_path: Path
     embedding_model: str
     index_dir: Path
+    include_patterns: list[str] | None
     extra_extensions: dict[str, str | None]
 
     @classmethod
@@ -76,6 +77,13 @@ class Config:
             root = _discover_codebase_root()
 
         index_dir = root / ".cocoindex_code"
+
+        raw_include_patterns = os.environ.get("COCOINDEX_CODE_INCLUDE_PATTERNS", "")
+        include_patterns = [
+            pattern.strip()
+            for pattern in raw_include_patterns.split(",")
+            if pattern.strip()
+        ]
 
         raw_extra = os.environ.get("COCOINDEX_CODE_EXTRA_EXTENSIONS", "")
         extra_extensions: dict[str, str | None] = {}
@@ -93,6 +101,7 @@ class Config:
             codebase_root_path=root,
             embedding_model=_load_embedding_model(),
             index_dir=index_dir,
+            include_patterns=include_patterns or None,
             extra_extensions=extra_extensions,
         )
 

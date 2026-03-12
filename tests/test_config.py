@@ -134,3 +134,39 @@ class TestExtraExtensions:
         ):
             config = Config.from_env()
             assert config.extra_extensions == {".inc": "php", ".yaml": None, ".tpl": "html"}
+
+
+class TestIncludePatterns:
+    """Tests for COCOINDEX_CODE_INCLUDE_PATTERNS env var."""
+
+    def test_empty_by_default(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {"COCOINDEX_CODE_ROOT_PATH": str(tmp_path)},
+            clear=False,
+        ):
+            os.environ.pop("COCOINDEX_CODE_INCLUDE_PATTERNS", None)
+            config = Config.from_env()
+            assert config.include_patterns is None
+
+    def test_parses_comma_separated_globs(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_INCLUDE_PATTERNS": "**/*.cpp,**/*.h",
+            },
+        ):
+            config = Config.from_env()
+            assert config.include_patterns == ["**/*.cpp", "**/*.h"]
+
+    def test_trims_whitespace(self, tmp_path: Path) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "COCOINDEX_CODE_ROOT_PATH": str(tmp_path),
+                "COCOINDEX_CODE_INCLUDE_PATTERNS": " **/*.cpp , **/*.h , ",
+            },
+        ):
+            config = Config.from_env()
+            assert config.include_patterns == ["**/*.cpp", "**/*.h"]

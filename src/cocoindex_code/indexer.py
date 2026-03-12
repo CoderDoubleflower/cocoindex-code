@@ -44,7 +44,11 @@ DEFAULT_INCLUDED_PATTERNS = [
     "**/*.php",  # PHP
 ]
 
-INCLUDED_PATTERNS = DEFAULT_INCLUDED_PATTERNS + [f"**/*{ext}" for ext in config.extra_extensions]
+INCLUDED_PATTERNS = (
+    config.include_patterns
+    if config.include_patterns is not None
+    else DEFAULT_INCLUDED_PATTERNS + [f"**/*{ext}" for ext in config.extra_extensions]
+)
 
 # Language overrides from extra_extensions (e.g. ".inc" -> "php")
 LANGUAGE_OVERRIDES: dict[str, str] = {
