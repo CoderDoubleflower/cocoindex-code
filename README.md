@@ -186,6 +186,38 @@ If `COCOINDEX_CODE_ROOT_PATH` is not set, the codebase root is discovered by:
 2. Finding the nearest parent directory containing `.git/`
 3. Falling back to the current working directory
 
+If your repository layout is unusual, or you want to avoid indexing the wrong parent directory, set `COCOINDEX_CODE_ROOT_PATH` explicitly.
+
+Use the current directory as the index root:
+
+```bash
+COCOINDEX_CODE_ROOT_PATH="$(pwd)" cocoindex-code index
+```
+
+Example with file filtering and a remote embedding model:
+
+```bash
+COCOINDEX_CODE_ROOT_PATH="$(pwd)" \
+COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h" \
+COCOINDEX_CODE_EMBEDDING_MODEL="openrouter/qwen/qwen3-embedding-8b" \
+OPENROUTER_API_KEY="your-api-key" \
+cocoindex-code index
+```
+
+How to verify which root is in use:
+
+1. The tool always creates `.cocoindex_code/` under the resolved root directory.
+2. You can print the resolved config directly:
+
+```bash
+~/.local/share/uv/tools/cocoindex-code/bin/python - <<'PY'
+from cocoindex_code.config import Config
+cfg = Config.from_env()
+print("root =", cfg.codebase_root_path)
+print("index_dir =", cfg.index_dir)
+PY
+```
+
 ### Embedding model
 This package now runs in API-only mode. By default it uses OpenAI's `text-embedding-3-small`, so you need to provide `OPENAI_API_KEY` unless you override the model to another LiteLLM-compatible provider.
 
@@ -324,6 +356,35 @@ COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h" cocoindex-code index
 When `COCOINDEX_CODE_INCLUDE_PATTERNS` is set, it replaces the default include list entirely.
 
 `COCOINDEX_CODE_EXTRA_EXTENSIONS` is still useful when you want to keep the default file types and only add a few more.
+
+## Troubleshooting
+
+### Noisy LiteLLM Provider Output During Indexing
+
+When embedding requests fail, some LiteLLM versions may print extra diagnostic lines such as:
+
+```text
+Provider List: https://docs.litellm.ai/docs/providers
+```
+
+This output comes from LiteLLM, not from `cocoindex-code`. It often appears alongside provider routing, authentication, or model availability errors.
+
+Before patching anything, first fix the actual embedding configuration:
+
+- Confirm `COCOINDEX_CODE_EMBEDDING_MODEL` is set to the model you expect
+- Confirm the matching API key variable is present
+- If you use OpenRouter, confirm your selected provider is allowed for that model
+
+If you still want to patch the installed LiteLLM package locally, first locate the exact file path inside the uv tool environment:
+
+```bash
+~/.local/share/uv/tools/cocoindex-code/bin/python - <<'PY'
+import litellm
+print(litellm.__file__)
+PY
+```
+
+After editing the installed package, remember that a future `uv tool install --force ...` reinstall can overwrite your local patch.
 
 ## MCP Tools
 
