@@ -82,8 +82,10 @@ Add the MCP server to Claude Code:
 claude mcp add cocoindex-code \
   --scope user \
   --transport stdio \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=openrouter/qwen/qwen3-embedding-8b \
-  -e OPENROUTER_API_KEY=your-api-key \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
+  -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
+  -e COCOINDEX_CODE_ENCODING_FORMAT=float \
+  -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
 
@@ -91,8 +93,10 @@ Add the MCP server to Codex:
 
 ```bash
 codex mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=openrouter/qwen/qwen3-embedding-8b \
-  -e OPENROUTER_API_KEY=your-api-key \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
+  -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
+  -e COCOINDEX_CODE_ENCODING_FORMAT=float \
+  -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
 
