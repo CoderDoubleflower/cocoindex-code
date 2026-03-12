@@ -44,23 +44,6 @@ A super light-weight, effective embedded MCP **(AST-based)** that understand and
 
 ## Get Started
 
-### Official PyPI Package
-
-These commands install the published `cocoindex-code` package from PyPI, not this fork:
-
-Using [pipx](https://pipx.pypa.io/stable/installation/):
-```bash
-pipx install cocoindex-code       # first install
-pipx upgrade cocoindex-code       # upgrade
-```
-
-Using [uv](https://docs.astral.sh/uv/getting-started/installation/):
-```bash
-uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
-```
-
-### This Fork: API-Only Variant
-
 Install this fork directly from GitHub:
 
 This fork also installs a patched `litellm` dependency from `CoderDoubleflower/litellm` to suppress noisy provider diagnostic output during indexing failures.
@@ -89,7 +72,7 @@ uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code
 
 To pin to a specific revision instead of `main`:
 ```bash
-pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@18e42e0"
+pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@8f811ad"
 ```
 
 Use `git+ssh` only if the installer has GitHub SSH access configured for this repository.
@@ -102,6 +85,8 @@ pipx install --force /path/to/cocoindex-code
 ### Claude
 ```bash
 claude mcp add cocoindex-code \
+  --scope user \
+  --transport stdio \
   -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
