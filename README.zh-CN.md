@@ -29,13 +29,12 @@ pipx install --force /path/to/cocoindex-code
 索引当前仓库：
 
 ```bash
-COCOINDEX_CODE_ROOT_PATH="$(pwd)" cocoindex-code index
+cocoindex-code index
 ```
 
 只索引 C/C++ 文件，并使用远程 embedding 服务：
 
 ```bash
-COCOINDEX_CODE_ROOT_PATH="$(pwd)" \
 COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h,**/*.c" \
 COCOINDEX_CODE_EMBEDDING_MODEL="openai/Qwen3-VL-Embedding-8B" \
 COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
@@ -76,7 +75,23 @@ codex mcp add cocoindex-code \
 | `COCOINDEX_CODE_INCLUDE_PATTERNS` | 逗号分隔的 glob 模式。设置后会直接覆盖内置文件类型列表。 | 内置语言列表 |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | 在内置文件类型基础上额外添加的扩展名。格式：`ext` 或 `ext:language`。 | 无 |
 
-Provider 的鉴权和专用 endpoint 变量仍然沿用 LiteLLM 约定，比如 `OPENAI_API_KEY`、`OPENROUTER_API_KEY`、`VOYAGE_API_KEY`、`AZURE_API_KEY`、`AZURE_API_BASE`、`OLLAMA_API_BASE`。
+`COCOINDEX_CODE_EMBEDDING_MODEL` 中的 `provider/` 前缀用于告诉 LiteLLM 使用哪种调用协议，**并不代表模型托管在该 provider 上**。例如 `openai/Qwen3-VL-Embedding-8B` 的含义是"使用 OpenAI 兼容协议调用此模型"。配合 `COCOINDEX_CODE_API_BASE`，可以指向任意 OpenAI 兼容的 endpoint（vLLM、Ollama 等）。不带前缀的模型名（如 `text-embedding-3-small`）默认使用 OpenAI provider。
+
+以下供应商已内置于 LiteLLM，只需设置对应的 API Key，无需设置 `COCOINDEX_CODE_API_BASE`：
+
+| 供应商 | 模型前缀 | 环境变量 |
+|--------|---------|---------|
+| OpenAI | 无前缀 或 `openai/` | `OPENAI_API_KEY` |
+| Cohere | `cohere/` | `COHERE_API_KEY` |
+| Voyage AI | `voyage/` | `VOYAGE_API_KEY` |
+| Mistral | `mistral/` | `MISTRAL_API_KEY` |
+| Google Gemini | `gemini/` | `GEMINI_API_KEY` |
+| HuggingFace | `huggingface/` | `HUGGINGFACE_API_KEY` |
+| OpenRouter | `openrouter/` | `OPENROUTER_API_KEY` |
+| Azure OpenAI | `azure/` | `AZURE_API_KEY`、`AZURE_API_BASE`、`AZURE_API_VERSION` |
+| AWS Bedrock | `bedrock/` | `AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`AWS_REGION_NAME` |
+
+如需使用其他 OpenAI 兼容的 endpoint（自建 vLLM、Ollama 等），请使用 `openai/` 前缀并配合 `COCOINDEX_CODE_API_BASE`。
 
 ## MCP 工具
 

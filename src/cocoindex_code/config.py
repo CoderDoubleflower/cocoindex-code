@@ -92,7 +92,7 @@ class Config:
         if root_path_str:
             root = Path(root_path_str).resolve()
         else:
-            root = _discover_codebase_root()
+            root = Path.cwd()
 
         api_base = os.environ.get("COCOINDEX_CODE_API_BASE", "").strip() or None
         encoding_format = _load_encoding_format()

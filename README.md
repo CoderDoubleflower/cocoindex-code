@@ -61,13 +61,12 @@ pipx install --force /path/to/cocoindex-code
 Index the current repository:
 
 ```bash
-COCOINDEX_CODE_ROOT_PATH="$(pwd)" cocoindex-code index
+cocoindex-code index
 ```
 
 Index only C/C++ files with a remote embedding model:
 
 ```bash
-COCOINDEX_CODE_ROOT_PATH="$(pwd)" \
 COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h,**/*.c" \
 COCOINDEX_CODE_EMBEDDING_MODEL="openai/Qwen3-VL-Embedding-8B" \
 COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
@@ -108,7 +107,23 @@ codex mcp add cocoindex-code \
 | `COCOINDEX_CODE_INCLUDE_PATTERNS` | Comma-separated glob patterns. When set, replaces the built-in file type list. | Built-in language list |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Extra file extensions to add on top of the built-in list. Format: `ext` or `ext:language`. | _(none)_ |
 
-Provider credentials and provider-specific endpoint variables are still read from the environment variables expected by LiteLLM, for example `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `VOYAGE_API_KEY`, `AZURE_API_KEY`, `AZURE_API_BASE`, or `OLLAMA_API_BASE`.
+The `provider/` prefix in `COCOINDEX_CODE_EMBEDDING_MODEL` tells LiteLLM which calling protocol to use — it does **not** mean the model is hosted by that provider. For example, `openai/Qwen3-VL-Embedding-8B` means "call this model using the OpenAI-compatible protocol". Combined with `COCOINDEX_CODE_API_BASE`, you can point it at any OpenAI-compatible endpoint (vLLM, Ollama, etc.). A model name without a prefix (e.g. `text-embedding-3-small`) defaults to the OpenAI provider.
+
+The following providers are built-in to LiteLLM — just set the API key and you're good to go, no need to set `COCOINDEX_CODE_API_BASE`:
+
+| Provider | Model prefix | Environment variable |
+|----------|-------------|----------------------|
+| OpenAI | _(none)_ or `openai/` | `OPENAI_API_KEY` |
+| Cohere | `cohere/` | `COHERE_API_KEY` |
+| Voyage AI | `voyage/` | `VOYAGE_API_KEY` |
+| Mistral | `mistral/` | `MISTRAL_API_KEY` |
+| Google Gemini | `gemini/` | `GEMINI_API_KEY` |
+| HuggingFace | `huggingface/` | `HUGGINGFACE_API_KEY` |
+| OpenRouter | `openrouter/` | `OPENROUTER_API_KEY` |
+| Azure OpenAI | `azure/` | `AZURE_API_KEY`, `AZURE_API_BASE`, `AZURE_API_VERSION` |
+| AWS Bedrock | `bedrock/` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION_NAME` |
+
+For any other OpenAI-compatible endpoint (self-hosted vLLM, Ollama, etc.), use the `openai/` prefix together with `COCOINDEX_CODE_API_BASE`.
 
 ## MCP Tools
 
