@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -73,6 +74,31 @@ def _load_encoding_format() -> str:
     return value
 
 
+def _parse_json_string_list_env(var_name: str) -> list[str]:
+    """Parse an environment variable as a JSON array of strings."""
+    raw_value = os.environ.get(var_name, "")
+    if not raw_value.strip():
+        return []
+
+    try:
+        parsed = json.loads(raw_value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{var_name} must be a JSON array of strings, got invalid JSON") from exc
+
+    if not isinstance(parsed, list):
+        raise ValueError(f"{var_name} must be a JSON array of strings")
+
+    result: list[str] = []
+    for item in parsed:
+        if not isinstance(item, str):
+            raise ValueError(f"{var_name} must be a JSON array of strings")
+        item = item.strip()
+        if item:
+            result.append(item)
+
+    return result
+
+
 @dataclass
 class Config:
     """Configuration loaded from environment variables."""
@@ -84,6 +110,7 @@ class Config:
     index_dir: Path
     include_patterns: list[str] | None
     extra_extensions: dict[str, str | None]
+    excluded_patterns: list[str]
 
     @classmethod
     def from_env(cls) -> Config:
@@ -105,6 +132,7 @@ class Config:
             if pattern.strip()
         ]
 
+        # Extra file extensions (format: "inc:php,yaml,toml" — optional lang after colon)
         raw_extra = os.environ.get("COCOINDEX_CODE_EXTRA_EXTENSIONS", "")
         extra_extensions: dict[str, str | None] = {}
         for token in raw_extra.split(","):
@@ -117,6 +145,9 @@ class Config:
             else:
                 extra_extensions[f".{token}"] = None
 
+        # Excluded file glob patterns
+        excluded_patterns = _parse_json_string_list_env("COCOINDEX_CODE_EXCLUDED_PATTERNS")
+
         return cls(
             codebase_root_path=root,
             embedding_model=_load_embedding_model(),
@@ -125,6 +156,7 @@ class Config:
             index_dir=index_dir,
             include_patterns=include_patterns or None,
             extra_extensions=extra_extensions,
+            excluded_patterns=excluded_patterns,
         )
 
     @property

@@ -106,6 +106,7 @@ codex mcp add cocoindex-code \
 | `COCOINDEX_CODE_ENCODING_FORMAT` | Embedding response encoding format passed to LiteLLM. `float` is the safest choice for this project. Supported values: `float`, `base64`, `bytes`, `bytes_only`. | `float` |
 | `COCOINDEX_CODE_INCLUDE_PATTERNS` | Comma-separated glob patterns. When set, replaces the built-in file type list. | Built-in language list |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Extra file extensions to add on top of the built-in list. Format: `ext` or `ext:language`. | _(none)_ |
+| `COCOINDEX_CODE_EXCLUDED_PATTERNS` | Additional glob patterns to exclude from indexing as a JSON array (e.g. `'["**/migration.sql", "{**/*.md,**/*.txt}"]'`). | _(none)_ |
 
 The `provider/` prefix in `COCOINDEX_CODE_EMBEDDING_MODEL` tells LiteLLM which calling protocol to use — it does **not** mean the model is hosted by that provider. For example, `openai/Qwen3-VL-Embedding-8B` means "call this model using the OpenAI-compatible protocol". Combined with `COCOINDEX_CODE_API_BASE`, you can point it at any OpenAI-compatible endpoint (vLLM, Ollama, etc.). A model name without a prefix (e.g. `text-embedding-3-small`) defaults to the OpenAI provider.
 
@@ -170,6 +171,7 @@ Returns matching code chunks with:
 | javascript | js | `.js` |
 | json | | `.json` |
 | kotlin | | `.kt`, `.kts` |
+| lua | | `.lua` |
 | markdown | md | `.md`, `.mdx` |
 | pascal | pas, dpr, delphi | `.pas`, `.dpr` |
 | php | | `.php` |
