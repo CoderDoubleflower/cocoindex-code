@@ -23,11 +23,13 @@ classifiers = [
 
 dependencies = [
     "mcp>=1.0.0",
-    "cocoindex==1.0.0a26",
-    "litellm @ git+https://github.com/CoderDoubleflower/litellm.git@853111ccb42bc3e9f902724082ecbac853137e92",
+    "cocoindex[litellm]==1.0.0a31",
     "sqlite-vec>=0.1.0",
     "pydantic>=2.0.0",
     "numpy>=1.24.0",
+    "typer>=0.9.0",
+    "msgspec>=0.19.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +44,7 @@ dev = [
 
 [project.scripts]
 cocoindex-code = "cocoindex_code:main"
+ccc = "cocoindex_code.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/cocoindex-io/cocoindex-code"
@@ -50,9 +53,6 @@ Issues = "https://github.com/cocoindex-io/cocoindex-code/issues"
 
 [tool.hatch.version]
 source = "vcs"
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cocoindex_code"]
@@ -68,6 +68,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "prek>=0.1.0",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [tool.uv]
