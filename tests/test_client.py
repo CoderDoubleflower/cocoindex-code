@@ -14,10 +14,17 @@ from pathlib import Path
 import pytest
 
 from cocoindex_code._version import __version__
-from cocoindex_code.client import DaemonClient
+from cocoindex_code.client import (
+    DEFAULT_DAEMON_START_TIMEOUT,
+    DaemonClient,
+    _daemon_start_timeout,
+    index_with_progress,
+)
 from cocoindex_code.daemon import _connection_family
 from cocoindex_code.protocol import (
     HandshakeRequest,
+    IndexResponse,
+    ProjectStatusResponse,
     StopRequest,
     encode_request,
 )
@@ -111,3 +118,66 @@ def test_client_close_is_idempotent(daemon_thread: str) -> None:
     client.handshake()
     client.close()
     client.close()  # should not raise
+
+
+def test_daemon_start_timeout_uses_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("COCOINDEX_CODE_DAEMON_START_TIMEOUT", raising=False)
+    assert _daemon_start_timeout() == DEFAULT_DAEMON_START_TIMEOUT
+
+
+def test_daemon_start_timeout_allows_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("COCOINDEX_CODE_DAEMON_START_TIMEOUT", "12.5")
+    assert _daemon_start_timeout() == 12.5
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-3"])
+def test_daemon_start_timeout_rejects_invalid_values(
+    value: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setenv("COCOINDEX_CODE_DAEMON_START_TIMEOUT", value)
+    assert _daemon_start_timeout() == DEFAULT_DAEMON_START_TIMEOUT
+    assert "using default" in caplog.text
+
+
+def test_index_with_progress_emits_status_updates(monkeypatch: pytest.MonkeyPatch) -> None:
+    updates: list[str] = []
+
+    class FakeIndexClient:
+        def index(self, project_root: str) -> IndexResponse:
+            time.sleep(0.03)
+            return IndexResponse(success=True)
+
+        def close(self) -> None:
+            pass
+
+    class FakeStatusClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def project_status(self, project_root: str) -> ProjectStatusResponse:
+            self.calls += 1
+            return ProjectStatusResponse(
+                indexing=True,
+                total_chunks=10 * self.calls,
+                total_files=self.calls,
+                languages={},
+            )
+
+        def close(self) -> None:
+            pass
+
+    status_client = FakeStatusClient()
+    monkeypatch.setattr("cocoindex_code.client.ensure_daemon", lambda: FakeIndexClient())
+    monkeypatch.setattr(
+        DaemonClient,
+        "connect",
+        classmethod(lambda cls: status_client),
+    )
+
+    resp = index_with_progress("/tmp/project", updates.append, poll_interval=0.01)
+
+    assert resp.success is True
+    assert updates[0] == "Indexing..."
+    assert any("files" in update and "chunks" in update for update in updates[1:])

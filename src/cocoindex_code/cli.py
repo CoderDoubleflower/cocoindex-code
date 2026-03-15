@@ -153,18 +153,24 @@ def init(
 @app.command()
 def index() -> None:
     """Create/update index for the codebase."""
-    client, project_root = require_daemon_for_project()
-    _typer.echo("Indexing...")
+    from .client import index_with_progress
+
+    project_root = str(require_project_root())
     try:
-        resp = client.index(project_root)
+        resp = index_with_progress(project_root, _typer.echo)
     except RuntimeError as e:
         _typer.echo(f"Indexing failed: {e}", err=True)
+        raise _typer.Exit(code=1)
+    except Exception as e:
+        _typer.echo(f"Error: Failed to connect to daemon: {e}", err=True)
         raise _typer.Exit(code=1)
     if not resp.success:
         _typer.echo(f"Indexing failed: {resp.message}", err=True)
         raise _typer.Exit(code=1)
 
+    client, _ = require_daemon_for_project()
     status = client.project_status(project_root)
+    client.close()
     print_index_stats(status)
 
 

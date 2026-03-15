@@ -182,7 +182,7 @@ def main() -> None:
     """
     import argparse
 
-    from .client import ensure_daemon
+    from .client import ensure_daemon, index_with_progress
     from .settings import (
         EmbeddingSettings,
         LanguageOverride,
@@ -282,8 +282,8 @@ def main() -> None:
 
     # --- Delegate to daemon ---
     if args.command == "index":
+        resp = index_with_progress(str(project_root), print)
         client = ensure_daemon()
-        resp = client.index(str(project_root))
         if resp.success:
             status = client.project_status(str(project_root))
             print("\nIndex stats:")

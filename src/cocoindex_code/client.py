@@ -7,7 +7,9 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
+from collections.abc import Callable
 from multiprocessing.connection import Client, Connection
 from pathlib import Path
 
@@ -33,6 +35,9 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_DAEMON_START_TIMEOUT = 30.0
+DAEMON_START_TIMEOUT_ENV = "COCOINDEX_CODE_DAEMON_START_TIMEOUT"
 
 
 class DaemonClient:
@@ -211,8 +216,38 @@ def stop_daemon() -> None:
         pass
 
 
-def _wait_for_daemon(timeout: float = 5.0) -> None:
+def _daemon_start_timeout() -> float:
+    """Return the daemon startup timeout in seconds."""
+    raw_timeout = os.getenv(DAEMON_START_TIMEOUT_ENV)
+    if raw_timeout is None:
+        return DEFAULT_DAEMON_START_TIMEOUT
+
+    try:
+        timeout = float(raw_timeout)
+    except ValueError:
+        logger.warning(
+            "Ignoring invalid %s=%r; using default %.1fs",
+            DAEMON_START_TIMEOUT_ENV,
+            raw_timeout,
+            DEFAULT_DAEMON_START_TIMEOUT,
+        )
+        return DEFAULT_DAEMON_START_TIMEOUT
+
+    if timeout <= 0:
+        logger.warning(
+            "Ignoring non-positive %s=%r; using default %.1fs",
+            DAEMON_START_TIMEOUT_ENV,
+            raw_timeout,
+            DEFAULT_DAEMON_START_TIMEOUT,
+        )
+        return DEFAULT_DAEMON_START_TIMEOUT
+
+    return timeout
+
+
+def _wait_for_daemon(timeout: float | None = None) -> None:
     """Wait for the daemon socket/pipe to become available."""
+    timeout = _daemon_start_timeout() if timeout is None else timeout
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if os.path.exists(daemon_socket_path()):
@@ -258,3 +293,58 @@ def ensure_daemon() -> DaemonClient:
             time.sleep(0.5)
 
     raise RuntimeError("Failed to connect to daemon after starting it")
+
+
+def index_with_progress(
+    project_root: str,
+    emit: Callable[[str], None],
+    *,
+    poll_interval: float = 1.0,
+) -> IndexResponse:
+    """Run indexing while emitting periodic progress updates."""
+    client = ensure_daemon()
+    response: IndexResponse | None = None
+    error: Exception | None = None
+    finished = threading.Event()
+
+    def _index() -> None:
+        nonlocal response, error
+        try:
+            response = client.index(project_root)
+        except Exception as exc:  # pragma: no cover - exercised via caller
+            error = exc
+        finally:
+            finished.set()
+
+    emit("Indexing...")
+    started_at = time.monotonic()
+    worker = threading.Thread(target=_index, daemon=True)
+    worker.start()
+
+    try:
+        while not finished.wait(timeout=poll_interval):
+            elapsed = int(time.monotonic() - started_at)
+            status_client: DaemonClient | None = None
+            try:
+                status_client = DaemonClient.connect()
+                status = status_client.project_status(project_root)
+                state = "indexing" if status.indexing else "starting"
+                emit(
+                    "Indexing... "
+                    f"{elapsed}s elapsed, {status.total_files} files, "
+                    f"{status.total_chunks} chunks ({state})"
+                )
+            except (ConnectionRefusedError, OSError, RuntimeError):
+                emit(f"Indexing... {elapsed}s elapsed")
+            finally:
+                if status_client is not None:
+                    status_client.close()
+    finally:
+        worker.join()
+        client.close()
+
+    if error is not None:
+        raise error
+    if response is None:
+        raise RuntimeError("Indexing finished without a response")
+    return response
