@@ -21,6 +21,8 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from .client import DaemonClient
 
+from .progress import TerminalProgress
+
 _MCP_INSTRUCTIONS = (
     "Code search and codebase understanding tools."
     "\n"
@@ -282,7 +284,11 @@ def main() -> None:
 
     # --- Delegate to daemon ---
     if args.command == "index":
-        resp = index_with_progress(str(project_root), print)
+        progress = TerminalProgress()
+        try:
+            resp = index_with_progress(str(project_root), progress.emit)
+        finally:
+            progress.finish()
         client = ensure_daemon()
         if resp.success:
             status = client.project_status(str(project_root))

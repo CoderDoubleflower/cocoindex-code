@@ -10,6 +10,7 @@ import typer as _typer
 if TYPE_CHECKING:
     from .client import DaemonClient
 
+from .progress import TerminalProgress
 from .protocol import ProjectStatusResponse, SearchResponse
 from .settings import (
     default_project_settings,
@@ -156,14 +157,18 @@ def index() -> None:
     from .client import index_with_progress
 
     project_root = str(require_project_root())
+    progress = TerminalProgress()
     try:
-        resp = index_with_progress(project_root, _typer.echo)
+        resp = index_with_progress(project_root, progress.emit)
     except RuntimeError as e:
+        progress.finish()
         _typer.echo(f"Indexing failed: {e}", err=True)
         raise _typer.Exit(code=1)
     except Exception as e:
+        progress.finish()
         _typer.echo(f"Error: Failed to connect to daemon: {e}", err=True)
         raise _typer.Exit(code=1)
+    progress.finish()
     if not resp.success:
         _typer.echo(f"Indexing failed: {resp.message}", err=True)
         raise _typer.Exit(code=1)
