@@ -29,254 +29,102 @@ A super light-weight, effective embedded MCP **(AST-based)** that understand and
 
 🌟 Please help star [CocoIndex](https://github.com/cocoindex-io/cocoindex) if you like this project!
 
-[Deutsch](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=de) |
-[English](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=en) |
-[Español](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=es) |
-[français](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=fr) |
-[日本語](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ja) |
-[한국어](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ko) |
-[Português](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=pt) |
-[Русский](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=ru) |
-[中文](https://readme-i18n.com/cocoindex-io/cocoindex-code?lang=zh)
+[English](README.md) | [中文](README.zh-CN.md)
 
 </div>
 
 
 ## Install
 
-This fork keeps the upstream daemon/CLI changes, but defaults to a lightweight
-LiteLLM-based embedding setup instead of pulling local `sentence-transformers`
-and `torch`.
+This fork installs a patched `litellm` dependency from `CoderDoubleflower/litellm`.
 
-Using [uv](https://docs.astral.sh/uv/getting-started/installation/):
+Install or update with `uv`:
+
 ```bash
 uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
-Using [pipx](https://pipx.pypa.io/stable/installation/):
+Install or update with `pipx`:
+
 ```bash
 pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
-From a local checkout:
+Install from a local checkout:
+
 ```bash
-uv tool install --force .
+pipx install --force /path/to/cocoindex-code
 ```
 
-### Claude
-```bash
-claude mcp add cocoindex-code -- cocoindex-code
-```
+## Use
 
-### Codex
-```bash
-codex mcp add cocoindex-code -- cocoindex-code
-```
-
-### OpenCode
-```bash
-opencode mcp add
-```
-Enter MCP server name: `cocoindex-code`
-Select MCP server type: `local`
-Enter command to run: `cocoindex-code`
-
-Or use opencode.json:
-```
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "cocoindex-code": {
-      "type": "local",
-      "command": [
-        "cocoindex-code"
-      ]
-    }
-  }
-}
-```
-
-### Build the Index
-
-For large codebases, we recommend running the indexer once before using the MCP so you can see the progress:
+Index the current repository:
 
 ```bash
 cocoindex-code index
 ```
 
-This lets you monitor the indexing process and ensure everything is ready. After the initial build, the MCP server will automatically keep the index up-to-date in the background as files change.
+Index only C/C++ files with a remote embedding model:
 
-For small projects you can skip this step — the MCP server will build the index automatically on first use.
-
-## When Is the MCP Triggered?
-
-Once configured, your coding agent (Claude Code, Codex, Cursor, etc.) automatically decides when semantic code search is helpful — especially for finding code by description, exploring unfamiliar codebases, fuzzy/conceptual matches, or locating implementations without knowing exact names.
-
-You can also nudge the agent explicitly, e.g. *"Use the cocoindex-code MCP to find how user sessions are managed."* For persistent instructions, add guidance to your project's `AGENTS.md` or `CLAUDE.md`:
-
-```
-Use the cocoindex-code MCP server for semantic code search when:
-- Searching for code by meaning or description rather than exact text
-- Exploring unfamiliar parts of the codebase
-- Looking for implementations without knowing exact names
-- Finding similar code patterns or related functionality
+```bash
+COCOINDEX_CODE_INCLUDE_PATTERNS="**/*.cpp,**/*.h,**/*.c" \
+COCOINDEX_CODE_EMBEDDING_MODEL="openai/Qwen3-VL-Embedding-8B" \
+COCOINDEX_CODE_API_BASE="https://your-openai-compatible-endpoint/v1" \
+OPENAI_API_KEY="your-api-key" \
+cocoindex-code index
 ```
 
-## Features
-- **Semantic Code Search**: Find relevant code using natural language queries when grep doesn't work well, and save tokens immediately.
-- **Ultra Performant to code changes**:⚡ Built on top of ultra performant [Rust indexing engine](https://github.com/cocoindex-io/cocoindex/edit/main/README.md). Only re-indexes changed files for fast updates.
-- **Multi-Language Support**: Python, JavaScript/TypeScript, Rust, Go, Java, C/C++, C#, SQL, Shell
-- **Embedded**: Portable and just works, no database setup required!
-- **Flexible Embeddings**: Defaults to LiteLLM/OpenAI-compatible remote embeddings, and still supports other providers through model prefixes and API base overrides.
-
-
-## Configuration
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `COCOINDEX_CODE_ROOT_PATH` | Root path of the codebase | Auto-discovered (see below) |
-| `COCOINDEX_CODE_EMBEDDING_MODEL` | Embedding model (see below) | `text-embedding-3-small` |
-| `COCOINDEX_CODE_API_BASE` | Optional custom API base for OpenAI-compatible endpoints | Provider default |
-| `COCOINDEX_CODE_ENCODING_FORMAT` | LiteLLM embedding response encoding format | `float` |
-| `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Additional file extensions to index (comma-separated, e.g. `"inc:php,yaml,toml"` — use `ext:lang` to override language detection) | _(none)_ |
-| `COCOINDEX_CODE_EXCLUDED_PATTERNS` | Additional glob patterns to exclude from indexing as a JSON array (e.g. `'["**/migration.sql", "{**/*.md,**/*.txt}"]'`) | _(none)_ |
-
-
-### Root Path Discovery
-
-If `COCOINDEX_CODE_ROOT_PATH` is not set, the codebase root is discovered by:
-
-1. Finding the current initialized project root (`.cocoindex_code/settings.yml`)
-2. Falling back to `COCOINDEX_CODE_ROOT_PATH` if set
-3. Falling back to a legacy `.cocoindex_code/cocoindex.db` root
-4. Falling back to the current working directory
-
-### Embedding model
-By default, this fork uses LiteLLM with `text-embedding-3-small`.
-
-That means the simplest setup is an OpenAI-compatible embedding endpoint plus the
-right API key. You can also point it at compatible gateways or self-hosted
-endpoints with `COCOINDEX_CODE_API_BASE`.
-
-Set `COCOINDEX_CODE_EMBEDDING_MODEL` to any [LiteLLM-supported model](https://docs.litellm.ai/docs/embedding/supported_embedding), along with the provider's API key:
-
-<details>
-<summary>OpenAI-Compatible Endpoint</summary>
+Add the MCP server to Claude Code:
 
 ```bash
 claude mcp add cocoindex-code \
+  --scope user \
+  --transport stdio \
   -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
   -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
   -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
 
-</details>
-
-<details>
-<summary>OpenAI</summary>
+Add the MCP server to Codex:
 
 ```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=text-embedding-3-small \
+codex mcp add cocoindex-code \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
+  -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
   -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
 
-</details>
+## Parameters
 
-<details>
-<summary>Azure OpenAI</summary>
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `COCOINDEX_CODE_ROOT_PATH` | Codebase root. If unset, the tool walks up from the current directory to find `.cocoindex_code`, `.git`, or another project marker. | Auto-discovered |
+| `COCOINDEX_CODE_EMBEDDING_MODEL` | LiteLLM model id. Use `provider/model` form, for example `openai/text-embedding-3-small` or `openrouter/qwen/qwen3-embedding-8b`. | `text-embedding-3-small` |
+| `COCOINDEX_CODE_API_BASE` | Optional custom API base URL passed to LiteLLM as `api_base`. Useful for OpenAI-compatible gateways and self-hosted endpoints. | Provider default |
+| `COCOINDEX_CODE_ENCODING_FORMAT` | Embedding response encoding format passed to LiteLLM. `float` is the safest choice for this project. Supported values: `float`, `base64`, `bytes`, `bytes_only`. | `float` |
+| `COCOINDEX_CODE_INCLUDE_PATTERNS` | Comma-separated glob patterns. When set, replaces the built-in file type list. | Built-in language list |
+| `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Extra file extensions to add on top of the built-in list. Format: `ext` or `ext:language`. | _(none)_ |
+| `COCOINDEX_CODE_EXCLUDED_PATTERNS` | Additional glob patterns to exclude from indexing as a JSON array (e.g. `'["**/migration.sql", "{**/*.md,**/*.txt}"]'`). | _(none)_ |
 
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=azure/your-deployment-name \
-  -e AZURE_API_KEY=your-api-key \
-  -e AZURE_API_BASE=https://your-resource.openai.azure.com \
-  -e AZURE_API_VERSION=2024-06-01 \
-  -- cocoindex-code
-```
+The `provider/` prefix in `COCOINDEX_CODE_EMBEDDING_MODEL` tells LiteLLM which calling protocol to use — it does **not** mean the model is hosted by that provider. For example, `openai/Qwen3-VL-Embedding-8B` means "call this model using the OpenAI-compatible protocol". Combined with `COCOINDEX_CODE_API_BASE`, you can point it at any OpenAI-compatible endpoint (vLLM, Ollama, etc.). A model name without a prefix (e.g. `text-embedding-3-small`) defaults to the OpenAI provider.
 
-</details>
+The following providers are built-in to LiteLLM — just set the API key and you're good to go, no need to set `COCOINDEX_CODE_API_BASE`:
 
-<details>
-<summary>Gemini</summary>
+| Provider | Model prefix | Environment variable |
+|----------|-------------|----------------------|
+| OpenAI | _(none)_ or `openai/` | `OPENAI_API_KEY` |
+| Cohere | `cohere/` | `COHERE_API_KEY` |
+| Voyage AI | `voyage/` | `VOYAGE_API_KEY` |
+| Mistral | `mistral/` | `MISTRAL_API_KEY` |
+| Google Gemini | `gemini/` | `GEMINI_API_KEY` |
+| HuggingFace | `huggingface/` | `HUGGINGFACE_API_KEY` |
+| OpenRouter | `openrouter/` | `OPENROUTER_API_KEY` |
+| Azure OpenAI | `azure/` | `AZURE_API_KEY`, `AZURE_API_BASE`, `AZURE_API_VERSION` |
+| AWS Bedrock | `bedrock/` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION_NAME` |
 
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=gemini/text-embedding-004 \
-  -e GEMINI_API_KEY=your-api-key \
-  -- cocoindex-code
-```
-
-</details>
-
-<details>
-<summary>Mistral</summary>
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=mistral/mistral-embed \
-  -e MISTRAL_API_KEY=your-api-key \
-  -- cocoindex-code
-```
-
-</details>
-
-<details>
-<summary>Voyage (Code-Optimized)</summary>
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=voyage/voyage-code-3 \
-  -e VOYAGE_API_KEY=your-api-key \
-  -- cocoindex-code
-```
-
-</details>
-
-<details>
-<summary>Cohere</summary>
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=cohere/embed-english-v3.0 \
-  -e COHERE_API_KEY=your-api-key \
-  -- cocoindex-code
-```
-
-</details>
-
-<details>
-<summary>AWS Bedrock</summary>
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=bedrock/amazon.titan-embed-text-v2:0 \
-  -e AWS_ACCESS_KEY_ID=your-access-key \
-  -e AWS_SECRET_ACCESS_KEY=your-secret-key \
-  -e AWS_REGION_NAME=us-east-1 \
-  -- cocoindex-code
-```
-
-</details>
-
-<details>
-<summary>Nebius</summary>
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=nebius/BAAI/bge-en-icl \
-  -e NEBIUS_API_KEY=your-api-key \
-  -- cocoindex-code
-```
-
-</details>
-
-Any model supported by LiteLLM works — see the [full list of embedding providers](https://docs.litellm.ai/docs/embedding/supported_embedding).
-
-For any other OpenAI-compatible endpoint, use the `openai/` prefix together with
-`COCOINDEX_CODE_API_BASE`.
+For any other OpenAI-compatible endpoint (self-hosted vLLM, Ollama, etc.), use the `openai/` prefix together with `COCOINDEX_CODE_API_BASE`.
 
 ## MCP Tools
 
@@ -361,7 +209,7 @@ Some Python installations (e.g. the one pre-installed on macOS) ship with a SQLi
 brew install python3
 ```
 
-Then re-install this fork:
+Then reinstall this fork:
 
 ```bash
 uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
