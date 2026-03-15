@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Annotated, Union
 
 import cocoindex as coco
 from cocoindex.connectors import sqlite
+from cocoindex.resources import schema as coco_schema
 import numpy as np
 from numpy.typing import NDArray
 
@@ -64,6 +65,12 @@ class _TestEmbedder:
         "server",
         "hello",
     )
+
+    async def __coco_vector_schema__(self) -> coco_schema.VectorSchema:
+        return coco_schema.VectorSchema(
+            dtype=np.dtype(np.float32),
+            size=len(self._vocabulary),
+        )
 
     async def embed(
         self,

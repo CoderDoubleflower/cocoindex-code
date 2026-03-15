@@ -42,17 +42,25 @@ A super light-weight, effective embedded MCP **(AST-based)** that understand and
 </div>
 
 
-## Get Started - zero config, let's go!!
+## Install
 
-Using [pipx](https://pipx.pypa.io/stable/installation/):
-```bash
-pipx install cocoindex-code       # first install
-pipx upgrade cocoindex-code       # upgrade
-```
+This fork keeps the upstream daemon/CLI changes, but defaults to a lightweight
+LiteLLM-based embedding setup instead of pulling local `sentence-transformers`
+and `torch`.
 
 Using [uv](https://docs.astral.sh/uv/getting-started/installation/):
 ```bash
-uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
+```
+
+Using [pipx](https://pipx.pypa.io/stable/installation/):
+```bash
+pipx install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
+```
+
+From a local checkout:
+```bash
+uv tool install --force .
 ```
 
 ### Claude
@@ -119,7 +127,7 @@ Use the cocoindex-code MCP server for semantic code search when:
 - **Ultra Performant to code changes**:⚡ Built on top of ultra performant [Rust indexing engine](https://github.com/cocoindex-io/cocoindex/edit/main/README.md). Only re-indexes changed files for fast updates.
 - **Multi-Language Support**: Python, JavaScript/TypeScript, Rust, Go, Java, C/C++, C#, SQL, Shell
 - **Embedded**: Portable and just works, no database setup required!
-- **Flexible Embeddings**: By default, no API key required with Local SentenceTransformers - totally free!  You can customize 100+ cloud providers.
+- **Flexible Embeddings**: Defaults to LiteLLM/OpenAI-compatible remote embeddings, and still supports other providers through model prefixes and API base overrides.
 
 
 ## Configuration
@@ -127,7 +135,9 @@ Use the cocoindex-code MCP server for semantic code search when:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `COCOINDEX_CODE_ROOT_PATH` | Root path of the codebase | Auto-discovered (see below) |
-| `COCOINDEX_CODE_EMBEDDING_MODEL` | Embedding model (see below) | `sbert/sentence-transformers/all-MiniLM-L6-v2` |
+| `COCOINDEX_CODE_EMBEDDING_MODEL` | Embedding model (see below) | `text-embedding-3-small` |
+| `COCOINDEX_CODE_API_BASE` | Optional custom API base for OpenAI-compatible endpoints | Provider default |
+| `COCOINDEX_CODE_ENCODING_FORMAT` | LiteLLM embedding response encoding format | `float` |
 | `COCOINDEX_CODE_EXTRA_EXTENSIONS` | Additional file extensions to index (comma-separated, e.g. `"inc:php,yaml,toml"` — use `ext:lang` to override language detection) | _(none)_ |
 | `COCOINDEX_CODE_EXCLUDED_PATTERNS` | Additional glob patterns to exclude from indexing as a JSON array (e.g. `'["**/migration.sql", "{**/*.md,**/*.txt}"]'`) | _(none)_ |
 
@@ -136,27 +146,30 @@ Use the cocoindex-code MCP server for semantic code search when:
 
 If `COCOINDEX_CODE_ROOT_PATH` is not set, the codebase root is discovered by:
 
-1. Finding the nearest parent directory containing `.cocoindex_code/`
-2. Finding the nearest parent directory containing `.git/`
-3. Falling back to the current working directory
+1. Finding the current initialized project root (`.cocoindex_code/settings.yml`)
+2. Falling back to `COCOINDEX_CODE_ROOT_PATH` if set
+3. Falling back to a legacy `.cocoindex_code/cocoindex.db` root
+4. Falling back to the current working directory
 
 ### Embedding model
-By default - this project use a local SentenceTransformers model (`sentence-transformers/all-MiniLM-L6-v2`). No API key required and completely free!
+By default, this fork uses LiteLLM with `text-embedding-3-small`.
 
-Use a code specific embedding model can achieve better semantic understanding for your results, this project supports all models on Ollama and 100+ cloud providers.
+That means the simplest setup is an OpenAI-compatible embedding endpoint plus the
+right API key. You can also point it at compatible gateways or self-hosted
+endpoints with `COCOINDEX_CODE_API_BASE`.
 
 Set `COCOINDEX_CODE_EMBEDDING_MODEL` to any [LiteLLM-supported model](https://docs.litellm.ai/docs/embedding/supported_embedding), along with the provider's API key:
 
 <details>
-<summary>Ollama (Local)</summary>
+<summary>OpenAI-Compatible Endpoint</summary>
 
 ```bash
 claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=ollama/nomic-embed-text \
+  -e COCOINDEX_CODE_EMBEDDING_MODEL=openai/Qwen3-VL-Embedding-8B \
+  -e COCOINDEX_CODE_API_BASE=https://your-openai-compatible-endpoint/v1 \
+  -e OPENAI_API_KEY=your-api-key \
   -- cocoindex-code
 ```
-
-Set `OLLAMA_API_BASE` if your Ollama server is not at `http://localhost:11434`.
 
 </details>
 
@@ -262,28 +275,8 @@ claude mcp add cocoindex-code \
 
 Any model supported by LiteLLM works — see the [full list of embedding providers](https://docs.litellm.ai/docs/embedding/supported_embedding).
 
-### Local SentenceTransformers models
-
-Use the `sbert/` prefix to load any [SentenceTransformers](https://www.sbert.net/) model locally (no API key required).
-
-**Example — general purpose text model:**
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=sbert/nomic-ai/nomic-embed-text-v1 \
-  -- cocoindex-code
-```
-
-**GPU-optimised code retrieval:**
-
-[`nomic-ai/CodeRankEmbed`](https://huggingface.co/nomic-ai/CodeRankEmbed) delivers significantly better code retrieval than the default model. It is 137M parameters, requires ~1 GB VRAM, and has an 8192-token context window.
-
-```bash
-claude mcp add cocoindex-code \
-  -e COCOINDEX_CODE_EMBEDDING_MODEL=sbert/nomic-ai/CodeRankEmbed \
-  -- cocoindex-code
-```
-
-**Note:** Switching models requires re-indexing your codebase (the vector dimensions differ).
+For any other OpenAI-compatible endpoint, use the `openai/` prefix together with
+`COCOINDEX_CODE_API_BASE`.
 
 ## MCP Tools
 
@@ -368,17 +361,10 @@ Some Python installations (e.g. the one pre-installed on macOS) ship with a SQLi
 brew install python3
 ```
 
-Then re-install cocoindex-code (see [Get Started](#get-started---zero-config-lets-go) for install options):
+Then re-install this fork:
 
-Using pipx:
 ```bash
-pipx install cocoindex-code       # first install
-pipx upgrade cocoindex-code       # upgrade
-```
-
-Using uv (install or upgrade):
-```bash
-uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+uv tool install --force "git+https://github.com/CoderDoubleflower/cocoindex-code.git@main"
 ```
 
 ## Large codebase / Enterprise
